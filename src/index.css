@@ -1,0 +1,22 @@
+/* src/index.css */
+
+/* Remove as margens padrão do navegador */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Garante que o corpo da página ocupe tudo e tenha cor clara */
+body {
+  width: 100%;
+  min-height: 100vh;
+  background-color: #f4f7f6; /* A mesma cor de fundo do seu App */
+  font-family: 'Segoe UI', sans-serif;
+}
+
+/* Garante que o container raiz do React também ocupe tudo */
+#root {
+  width: 100%;
+  min-height: 100vh;
+}
