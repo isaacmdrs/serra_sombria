@@ -106,9 +106,9 @@ interface Entity {
 }
 
 // --- 2. Configuração da API ---
-const N8N_BASE_URL_TEST = 'https://visac123.app.n8n.cloud/webhook-test';
-const N8N_BASE_URL_PRODUCTION = 'https://visac123.app.n8n.cloud/webhook';
-const API_TOKEN = '67eca16c8178fcc71acd832ffbc70c8de74da5925239c6f6b5d0dcd0dfabf9a7';
+const N8N_BASE_URL_PRODUCTION = import.meta.env.VITE_N8N_URL || ''; 
+const API_TOKEN = import.meta.env.VITE_API_TOKEN || '';
+
 const HEADER_NAME = 'api-key';
 
 type EntityType = 'locais' | 'personagens' | 'tags';
