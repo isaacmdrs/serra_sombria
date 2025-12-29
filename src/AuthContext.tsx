@@ -27,18 +27,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   async function signIn(login: string, pass: string) {
-    // Atenção: A rota de login no seu backend é /auth/login (fora do /api)
-    const response = await axios.post('http://localhost:8080/auth/login', {
-      login,
-      senha: pass
-    });
+      // 1. Pega a URL do Vercel (Railway) ou usa localhost se estiver no seu PC
+      // Se a variável vier como ".../api", removemos o final para pegar a raiz
+      const envUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+      const baseUrl = envUrl.replace('/api', ''); 
 
-    const { token } = response.data;
+      // 2. Agora monta a URL correta: https://...railway.app/auth/login
+      const response = await axios.post(`${baseUrl}/auth/login`, {
+        login,
+        senha: pass
+      });
 
-    localStorage.setItem('serra_token', token);
-    localStorage.setItem('serra_user', login);
-    setUser(login);
-  }
+      const { token } = response.data;
+
+      localStorage.setItem('serra_token', token);
+      localStorage.setItem('serra_user', login);
+      setUser(login);
+    }
 
   function signOut() {
     localStorage.clear();
