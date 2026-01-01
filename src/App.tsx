@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect, type FormEvent, type ChangeEvent } from 'react';
-import { AuthProvider, useAuth } from './AuthContext'; // Importe o arquivo criado acima
+import { AuthProvider, useAuth } from './AuthContext';
 import { api } from './api';
 import type { Entity, Local, Tag } from './types';
 
-// --- CSS GLOBAL (Mantido o seu estilo sofisticado) ---
+// --- CSS GLOBAL ---
 const globalCss = `
   @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
   body { margin: 0; font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; color: #0f172a; }
@@ -23,13 +23,17 @@ const globalCss = `
 `;
 
 // --- UTILITÁRIOS ---
-// Função para transformar ID do Drive em URL visível
+
+// CORREÇÃO CRÍTICA: URL estável para arquivos públicos do Google Drive
 const getDriveImageUrl = (urlOrId: string | undefined) => {
     if (!urlOrId) return null;
-    // Se já for um link completo, retorna ele, senão assume que é um ID e monta o link de thumbnail
+    
+    // Se já for um link completo (ex: vindo de outro lugar), retorna ele
     if (urlOrId.startsWith('http')) return urlOrId; 
-    // Truque: lh3.googleusercontent.com/d/ID exibe a imagem direta sem problemas de CORS na maioria das vezes
-    return `https://lh3.googleusercontent.com/d/${urlOrId}`;
+    
+    // URL oficial do Google Drive para exibir imagens públicas
+    // "uc" = User Content, "export=view" = Forçar visualização
+    return `https://drive.google.com/uc?export=view&id=${urlOrId}`;
 };
 
 const stringToColor = (str: string) => {
@@ -53,7 +57,7 @@ const LoginScreen = () => {
         try {
             await signIn(login, pass);
         } catch (err) {
-            setError('Credenciais inválidas ou erro no servidor.' + err);
+            setError('Credenciais inválidas ou erro no servidor.');
         } finally {
             setLoading(false);
         }
@@ -166,14 +170,13 @@ function MainContent() {
         setModalAberto(true);
     };
 
-    const handleEditarTexto = () => {
+    // CORREÇÃO CRÍTICA: Função universal para popular o formulário e evitar perda de dados
+    const preencherFormularioComItemSelecionado = () => {
         if (!itemSelecionado) return;
-        setModo('editarTexto');
         const item = itemSelecionado as any;
         
         let tagsParsed: string[] = [];
         try {
-            // Verifica se é string JSON ou array
             if (item.tags) {
                 tagsParsed = typeof item.tags === 'string' ? JSON.parse(item.tags) : item.tags;
             }
@@ -182,13 +185,27 @@ function MainContent() {
         setForm({
             id: getId(item),
             nome: item.nome || '',
-            descricao: item.descricao || '',
+            // Campos de Locais e Tags
+            descricao: item.descricao || '', 
+            // Campos de Personagens
             funcao: item.funcao || '',
             localPrincipal: item.localPrincipal || '',
             resumo: item.resumo || '',
             historia: item.historia || '',
             tags: Array.isArray(tagsParsed) ? tagsParsed : []
         });
+    };
+
+    const handleEditarTexto = () => {
+        preencherFormularioComItemSelecionado(); // Garante os dados antes de abrir
+        setModo('editarTexto');
+    };
+
+    // NOVO HANDLER: Garante que os dados sejam preservados ao editar imagem
+    const handleEditarImagemClick = () => {
+        preencherFormularioComItemSelecionado(); 
+        setModo('editarImagem');
+        setArquivo(null);
     };
 
     const handleSalvar = async (e: FormEvent) => {
@@ -205,10 +222,11 @@ function MainContent() {
                     headers: { 'Content-Type': 'multipart/form-data' }
                 });
                 
+                // CORREÇÃO: Captura o ID e monta a URL estável
                 const match = uploadRes.data.toString().match(/ID:\s*(\S+)/);
                 if (match && match[1]) {
                     const driveId = match[1];
-                    imagemUrlFinal = `https://lh3.googleusercontent.com/d/${driveId}`; // Ajuste para sua lógica de URL
+                    imagemUrlFinal = `https://drive.google.com/uc?export=view&id=${driveId}`;
                 }
             }
 
@@ -324,7 +342,8 @@ function MainContent() {
                                          {itemSelecionado.imagemUrl && (
                                             <img src={getDriveImageUrl(itemSelecionado.imagemUrl) || ''} alt="Capa" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                          )}
-                                         <button onClick={() => setModo('editarImagem')} style={{ position: 'absolute', top: 10, right: 10, background: 'white', border: 'none', padding: '8px 16px', borderRadius: '20px', cursor: 'pointer', fontWeight: 'bold' }}>📷 Alterar</button>
+                                         {/* BOTÃO CORRIGIDO: Usa o handler que preserva os dados */}
+                                         <button onClick={handleEditarImagemClick} style={{ position: 'absolute', top: 10, right: 10, background: 'white', border: 'none', padding: '8px 16px', borderRadius: '20px', cursor: 'pointer', fontWeight: 'bold' }}>📷 Alterar</button>
                                     </div>
                                     
                                     <div style={{ whiteSpace: 'pre-wrap', lineHeight: 1.6, color: '#334155' }}>
@@ -350,7 +369,6 @@ function MainContent() {
                                                 {(() => {
                                                     try {
                                                         const rawTags = (itemSelecionado as any).tags;
-                                                        // Se for string, faz parse. Se for array, usa direto.
                                                         const tagsList = typeof rawTags === 'string' ? JSON.parse(rawTags) : rawTags;
                                                         
                                                         if (Array.isArray(tagsList) && tagsList.length > 0) {
@@ -382,7 +400,7 @@ function MainContent() {
                                     </div>
                                 </>
                             ) : (
-                                /* FORMULÁRIO (CRIAR / EDITAR) - MANTIDO IGUAL */
+                                /* FORMULÁRIO (CRIAR / EDITAR) */
                                 <form onSubmit={handleSalvar} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                                     
                                     {modo === 'editarImagem' ? (
