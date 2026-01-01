@@ -33,7 +33,7 @@ const getDriveImageUrl = (urlOrId: string | undefined) => {
     
     // URL oficial do Google Drive para exibir imagens públicas
     // "uc" = User Content, "export=view" = Forçar visualização
-    return `https://drive.google.com/uc?export=view&id=${urlOrId}`;
+    return `https://lh3.googleusercontent.com/d/${urlOrId}`;
 };
 
 const stringToColor = (str: string) => {
@@ -226,7 +226,7 @@ function MainContent() {
                 const match = uploadRes.data.toString().match(/ID:\s*(\S+)/);
                 if (match && match[1]) {
                     const driveId = match[1];
-                    imagemUrlFinal = `https://drive.google.com/uc?export=view&id=${driveId}`;
+                    imagemUrlFinal = `https://lh3.googleusercontent.com/d/${driveId}`;
                 }
             }
 
